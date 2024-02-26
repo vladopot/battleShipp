@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import { WebSocketServer } from 'ws';
+import * as WebSocket from 'ws';
+import { soCerReq } from './models/models';
 
 export const httpServer = http.createServer(function (req, res) {
     const __dirname = path.resolve(path.dirname(''));
@@ -17,16 +18,17 @@ export const httpServer = http.createServer(function (req, res) {
     });
 });
 
-const wsServer = new WebSocketServer({ port: 3000 });
+const wsServer = new WebSocket.Server({ port: 3000 });
 
 wsServer.on('connection', (ws) => {
-    console.log('Connected!');
-
     ws.on('message', (msg) => {
-        const req = JSON.parse(msg);
-        
+        const req: soCerReq = JSON.parse(msg.toString());
         if (req.type === "reg") {
             console.log(req);
         }
-    }) 
-})
+    });
+    
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+});
