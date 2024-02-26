@@ -2,7 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import * as WebSocket from 'ws';
-import { soCerReq } from './models/models';
+import { addUsetToRoom, createGame, createRoom, regRequest, regResponse } from './models/models';
+import { uuid } from 'uuidv4';
+
+const rooms = [];
 
 export const httpServer = http.createServer(function (req, res) {
     const __dirname = path.resolve(path.dirname(''));
@@ -21,10 +24,56 @@ export const httpServer = http.createServer(function (req, res) {
 const wsServer = new WebSocket.Server({ port: 3000 });
 
 wsServer.on('connection', (ws) => {
+    let userName = '';
+    let userId = '';
     ws.on('message', (msg) => {
-        const req: soCerReq = JSON.parse(msg.toString());
+        const req: regRequest = JSON.parse(msg.toString());
         if (req.type === "reg") {
-            console.log(req);
+            const type = req.type;
+            const name = req.data.name;
+            userName = name;
+            const response: regResponse = {
+                type: type,
+                data: {
+                    name: name,
+                    index: '',
+                    error: false,
+                    errorText: ''
+                },
+                id: 0
+            };
+            try {
+                userId = uuid();
+                ws.send(JSON.stringify(req));
+            } catch (err) {
+                response.data.error = true;
+                response.data.errorText = err;
+            }
+            console.log(msg);
+        } else if (req.type === "create_room") {
+            const response: addUsetToRoom = {
+                type: 'add_user_to_room',
+                data: {
+                    indexRoom: 0
+                },
+                id: 0
+            };
+            const createRoomResp: createGame = {
+                type: 'create_game',
+                data: {
+                    idGame: 0,
+                    idPlayer: userId
+                },
+                id: 0
+            };
+            try {
+                ws.send(JSON.stringify(createRoomResp));
+                ws.send(JSON.stringify(response));
+                console.log(JSON.stringify(createRoomResp));
+            } catch (err) {
+                console.error(err);
+            }
+            console.log(msg.toString());
         }
     });
     
