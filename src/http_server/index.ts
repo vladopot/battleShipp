@@ -2,10 +2,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import * as WebSocket from 'ws';
-import { addUsetToRoom, createGame, createRoom, regRequest, regResponse } from './models/models';
+import { regRequest, regResponse } from './models/regModels';
 import { uuid } from 'uuidv4';
+import { addUsetToRoom, createGame } from './models/roomModels';
+import { PORT } from './models/CONSTANTS';
 
 const rooms = [];
+const users = [];
 
 export const httpServer = http.createServer(function (req, res) {
     const __dirname = path.resolve(path.dirname(''));
@@ -21,14 +24,15 @@ export const httpServer = http.createServer(function (req, res) {
     });
 });
 
-const wsServer = new WebSocket.Server({ port: 3000 });
+const wsServer = new WebSocket.Server({ port: PORT });
 
 wsServer.on('connection', (ws) => {
     let userName = '';
     let userId = '';
-    ws.on('message', (msg) => {
+    ws.on('message', (msg: regRequest) => {
         const req: regRequest = JSON.parse(msg.toString());
         if (req.type === "reg") {
+            users.push(msg.data);
             const type = req.type;
             const name = req.data.name;
             userName = name;
@@ -67,7 +71,6 @@ wsServer.on('connection', (ws) => {
                 id: 0
             };
             try {
-                ws.send(JSON.stringify(createRoomResp));
                 ws.send(JSON.stringify(response));
                 console.log(JSON.stringify(createRoomResp));
             } catch (err) {
